@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: leadflowcrm-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: leadflowcrm
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - leadflowcrm-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leadflowcrm-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: leadflowcrm
+      JWT_SECRET: leadflowcrm_jwt_secret_key_2024_secure
+      JWT_EXPIRY_HOURS: 24
+      CSRF_SECRET: leadflowcrm_csrf_secret_key_2024
+      RATE_LIMIT_REQUESTS: 100
+      RATE_LIMIT_WINDOW_MINUTES: 1
+    depends_on:
+      - mongo
+    networks:
+      - leadflowcrm-network
+    volumes:
+      - ./web:/app/web:ro
+      - ./.env:/app/.env:ro
+
+volumes:
+  mongo_data:
+
+networks:
+  leadflowcrm-network:
+    driver: bridge

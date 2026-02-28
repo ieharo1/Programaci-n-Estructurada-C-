@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar { min-height: 100vh; background: #2c3e50; }
+        .sidebar a { color: #ecf0f1; text-decoration: none; padding: 12px 20px; display: block; border-left: 3px solid transparent; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; border-left-color: #3498db; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-3 text-center border-bottom border-secondary">
+                    <i class="bi bi-people-fill text-white display-6"></i>
+                    <h5 class="text-white mt-2">LeadFlowCRM</h5>
+                </div>
+                <nav class="mt-3">
+                    <a href="/dashboard"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                    <a href="/dashboard/leads" class="active"><i class="bi bi-person-lines-fill me-2"></i> Leads</a>
+                    <a href="/dashboard/users"><i class="bi bi-people me-2"></i> Usuarios</a>
+                    <a href="#" id="logoutBtn"><i class="bi bi-box-arrow-right me-2"></i> Salir</a>
+                </nav>
+            </div>
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-person-lines-fill"></i> Gestión de Leads</h2>
+                    <div>
+                        <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Importar CSV
+                        </button>
+                        <a href="/dashboard/leads/new" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo Lead</a>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select" id="filterStatus">
+                                    <option value="">Todos</option>
+                                    <option value="new">Nuevo</option>
+                                    <option value="contacted">Contactado</option>
+                                    <option value="qualified">Calificado</option>
+                                    <option value="proposal">Propuesta</option>
+                                    <option value="negotiation">Negociación</option>
+                                    <option value="won">Ganado</option>
+                                    <option value="lost">Perdido</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fuente</label>
+                                <select class="form-select" id="filterSource">
+                                    <option value="">Todos</option>
+                                    <option value="web">Web</option>
+                                    <option value="referral">Referido</option>
+                                    <option value="social">Redes Sociales</option>
+                                    <option value="ads">Publicidad</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Buscar</label>
+                                <input type="text" class="form-control" id="filterSearch" placeholder="Nombre, email o empresa...">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <table id="leadsTable" class="table table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Empresa</th>
+                                    <th>Estado</th>
+                                    <th>Valor</th>
+                                    <th>Fuente</th>
+                                    <th>Asignado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer">
+                        <nav>
+                            <ul class="pagination mb-0" id="pagination"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="importModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Importar Leads desde CSV</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Pegue los datos CSV (nombre,email,teléfono,empresa,estado,valor,fuente)</p>
+                    <textarea class="form-control" id="csvData" rows="6" placeholder="Juan,juan@email.com,123456789,EmpresaA,new,5000,web&#10;Maria,maria@email.com,987654321,EmpresaB,contacted,3000,referral"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="importCSV()">Importar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        const API_URL = '/api';
+        let token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login';
+        const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+
+        let currentPage = 1;
+        let totalPages = 1;
+        let dataTable;
+
+        async function loadLeads(page = 1) {
+            currentPage = page;
+            const status = document.getElementById('filterStatus').value;
+            const source = document.getElementById('filterSource').value;
+            const search = document.getElementById('filterSearch').value;
+
+            let url = API_URL + `/leads?page=${page}&limit=10`;
+            if (status) url += `&status=${status}`;
+            if (source) url += `&source=${source}`;
+            if (search) url += `&search=${search}`;
+
+            try {
+                const res = await fetch(url, { headers });
+                const data = await res.json();
+                totalPages = Math.ceil(data.total / data.limit);
+                renderLeads(data.data);
+                renderPagination();
+            } catch (err) { console.error(err); }
+        }
+
+        function renderLeads(leads) {
+            const tbody = document.getElementById('leadsTableBody');
+            tbody.innerHTML = leads.map(lead => `
+                <tr>
+                    <td>${lead.name}</td>
+                    <td>${lead.email}</td>
+                    <td>${lead.phone || '-'}</td>
+                    <td>${lead.company || '-'}</td>
+                    <td><span class="badge bg-${getStatusColor(lead.status)}">${lead.status}</span></td>
+                    <td>$${(lead.value || 0).toLocaleString()}</td>
+                    <td>${lead.source || '-'}</td>
+                    <td>${lead.assigned_to ? '<span class="text-success"><i class="bi bi-check-circle"></i></span>' : '<span class="text-muted"><i class="bi bi-x-circle"></i></span>'}</td>
+                    <td>${new Date(lead.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <a href="/dashboard/leads/${lead.id}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                        <a href="/dashboard/leads/${lead.id}/edit" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil"></i></a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteLead('${lead.id}')"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusColor(status) {
+            const colors = { new: 'primary', contacted: 'info', qualified: 'warning', proposal: 'secondary', negotiation: 'primary', won: 'success', lost: 'danger' };
+            return colors[status] || 'secondary';
+        }
+
+        function renderPagination() {
+            const pag = document.getElementById('pagination');
+            let html = `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadLeads(${currentPage - 1})">Anterior</a>
+            </li>`;
+            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadLeads(${i})">${i}</a>
+                </li>`;
+            }
+            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadLeads(${currentPage + 1})">Siguiente</a>
+            </li>`;
+            pag.innerHTML = html;
+        }
+
+        function applyFilters() { loadLeads(1); }
+
+        async function importCSV() {
+            const csvData = document.getElementById('csvData').value;
+            const lines = csvData.trim().split('\n');
+            const leads = lines.map(line => {
+                const [name, email, phone, company, status, value, source] = line.split(',');
+                return { name: name?.trim(), email: email?.trim(), phone: phone?.trim(), company: company?.trim(), status: status?.trim() || 'new', value: parseFloat(value) || 0, source: source?.trim() || 'web' };
+            });
+
+            try {
+                const res = await fetch(API_URL + '/leads/import', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(leads)
+                });
+                const data = await res.json();
+                alert(`Se importaron ${data.imported} leads`);
+                $('#importModal').modal('hide');
+                loadLeads();
+            } catch (err) { alert('Error al importar'); }
+        }
+
+        async function deleteLead(id) {
+            if (!confirm('¿Está seguro de eliminar este lead?')) return;
+            try {
+                await fetch(API_URL + '/leads/' + id, { method: 'DELETE', headers });
+                loadLeads(currentPage);
+            } catch (err) { alert('Error al eliminar'); }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = '/login';
+        });
+
+        loadLeads();
+    </script>
+</body>
+</html>

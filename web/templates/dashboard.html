@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar { min-height: 100vh; background: #2c3e50; }
+        .sidebar a { color: #ecf0f1; text-decoration: none; padding: 12px 20px; display: block; border-left: 3px solid transparent; }
+        .sidebar a:hover, .sidebar a.active { background: #34495e; border-left-color: #3498db; }
+        .stat-card { border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .stat-card .icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-3 text-center border-bottom border-secondary">
+                    <i class="bi bi-people-fill text-white display-6"></i>
+                    <h5 class="text-white mt-2">LeadFlowCRM</h5>
+                </div>
+                <nav class="mt-3">
+                    <a href="/dashboard" class="active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                    <a href="/dashboard/leads"><i class="bi bi-person-lines-fill me-2"></i> Leads</a>
+                    <a href="/dashboard/users"><i class="bi bi-people me-2"></i> Usuarios</a>
+                    <a href="#" id="logoutBtn"><i class="bi bi-box-arrow-right me-2"></i> Salir</a>
+                </nav>
+            </div>
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+                    <div>
+                        <span class="me-3" id="userName"></span>
+                        <span class="badge bg-primary" id="userRole"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-4" id="statsCards">
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Total Leads</p>
+                                    <h3 class="mb-0" id="totalLeads">0</h3>
+                                </div>
+                                <div class="icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-people"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Asignados</p>
+                                    <h3 class="mb-0" id="assignedLeads">0</h3>
+                                </div>
+                                <div class="icon bg-success bg-opacity-10 text-success"><i class="bi bi-person-check"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Sin Asignar</p>
+                                    <h3 class="mb-0" id="unassignedLeads">0</h3>
+                                </div>
+                                <div class="icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-person-dash"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card p-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Valor Total</p>
+                                    <h3 class="mb-0" id="totalValue">$0</h3>
+                                </div>
+                                <div class="icon bg-info bg-opacity-10 text-info"><i class="bi bi-currency-dollar"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header"><h5 class="mb-0"><i class="bi bi-pie-chart"></i> Leads por Estado</h5></div>
+                            <div class="card-body">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header"><h5 class="mb-0"><i class="bi bi-bar-chart"></i> Leads por Fuente</h5></div>
+                            <div class="card-body">
+                                <canvas id="sourceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Últimos Leads</h5>
+                        <a href="/dashboard/leads/new" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nuevo Lead</a>
+                    </div>
+                    <div class="card-body">
+                        <table id="leadsTable" class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Empresa</th>
+                                    <th>Estado</th>
+                                    <th>Valor</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leadsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        const API_URL = '/api';
+        let token = localStorage.getItem('token');
+
+        if (!token) { window.location.href = '/login'; }
+
+        const headers = { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+
+        function getUser() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            document.getElementById('userName').textContent = user.name || 'Usuario';
+            document.getElementById('userRole').textContent = user.role || 'user';
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch(API_URL + '/leads/stats', { headers });
+                if (res.status === 401) { window.location.href = '/login'; return; }
+                const data = await res.json();
+                document.getElementById('totalLeads').textContent = data.total;
+                document.getElementById('assignedLeads').textContent = data.assigned;
+                document.getElementById('unassignedLeads').textContent = data.unassigned;
+                document.getElementById('totalValue').textContent = '$' + data.total_value.toLocaleString();
+                renderCharts(data);
+            } catch (err) { console.error(err); }
+        }
+
+        let statusChart, sourceChart;
+        function renderCharts(data) {
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            const sourceCtx = document.getElementById('sourceChart').getContext('2d');
+
+            if (statusChart) statusChart.destroy();
+            if (sourceChart) sourceChart.destroy();
+
+            const statusLabels = Object.keys(data.by_status || {});
+            const statusValues = Object.values(data.by_status || {});
+            const colors = ['#3498db', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6', '#1abc9c', '#34495e'];
+
+            statusChart = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                    datasets: [{ data: statusValues, backgroundColor: colors.slice(0, statusLabels.length) }]
+                }
+            });
+
+            const sourceLabels = Object.keys(data.by_source || {});
+            const sourceValues = Object.values(data.by_source || {});
+
+            sourceChart = new Chart(sourceCtx, {
+                type: 'bar',
+                data: {
+                    labels: sourceLabels,
+                    datasets: [{ label: 'Leads', data: sourceValues, backgroundColor: '#3498db' }]
+                },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        async function loadRecentLeads() {
+            try {
+                const res = await fetch(API_URL + '/leads?page=1&limit=5', { headers });
+                const data = await res.json();
+                const tbody = document.getElementById('leadsTableBody');
+                tbody.innerHTML = data.data.map(lead => `
+                    <tr>
+                        <td>${lead.name}</td>
+                        <td>${lead.email}</td>
+                        <td>${lead.company || '-'}</td>
+                        <td><span class="badge bg-${getStatusColor(lead.status)}">${lead.status}</span></td>
+                        <td>$${(lead.value || 0).toLocaleString()}</td>
+                        <td>${new Date(lead.created_at).toLocaleDateString()}</td>
+                        <td><a href="/dashboard/leads/${lead.id}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
+                    </tr>
+                `).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        function getStatusColor(status) {
+            const colors = { new: 'primary', contacted: 'info', qualified: 'warning', proposal: 'secondary', negotiation: 'primary', won: 'success', lost: 'danger' };
+            return colors[status] || 'secondary';
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = '/login';
+        });
+
+        getUser();
+        loadStats();
+        loadRecentLeads();
+    </script>
+</body>
+</html>
